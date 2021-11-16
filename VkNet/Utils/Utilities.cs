@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VkNet.Exception;
+using VkNet.Infrastructure;
 
 namespace VkNet.Utils
 {
@@ -108,7 +110,7 @@ namespace VkNet.Utils
 
 			try
 			{
-				var jObject = JObject.Parse(json);
+				var jObject = json.ToJObject();
 
 				foreach (var key in keysToHide)
 				{
@@ -120,7 +122,7 @@ namespace VkNet.Utils
 
 				return jObject.ToString(Formatting.Indented);
 			}
-			catch (JsonReaderException)
+			catch (VkApiException)
 			{
 				return json;
 			}
@@ -149,7 +151,7 @@ namespace VkNet.Utils
 		{
 			try
 			{
-				result = JsonConvert.DeserializeObject<T>(json);
+				result = JsonConvert.DeserializeObject<T>(json, JsonConfigure.JsonSerializerSettings);
 				return true;
 			}
 			catch

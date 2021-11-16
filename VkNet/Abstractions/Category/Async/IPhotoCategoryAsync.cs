@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -225,8 +225,6 @@ namespace VkNet.Abstractions
 		/// Параметр, возвращаемый в результате загрузки фотографии
 		/// на сервер.
 		/// </param>
-		/// <param name="captchaSid"> Идентификатор капчи </param>
-		/// <param name="captchaKey"> текст, который ввел пользователь </param>
 		/// <returns>
 		/// После успешного выполнения возвращает объект, содержащий поля photo_hash и
 		/// photo_src (при работе через VK.api метод
@@ -293,7 +291,7 @@ namespace VkNet.Abstractions
 		/// Возвращает адрес сервера для загрузки фотографии в личное сообщение
 		/// пользователю.
 		/// </summary>
-		/// <param name="peerId">
+		/// <param name="groupId">
 		/// Идентификатор назначения (для загрузки фотографии в
 		/// сообщениях сообществ).
 		/// </param>
@@ -302,7 +300,7 @@ namespace VkNet.Abstractions
 		/// Страница документации ВКонтакте
 		/// http://vk.com/dev/photos.getMessagesUploadServer
 		/// </remarks>
-		Task<UploadServerInfo> GetMessagesUploadServerAsync(long peerId);
+		Task<UploadServerInfo> GetMessagesUploadServerAsync(long? groupId);
 
 		/// <summary>
 		/// Сохраняет фотографию после успешной загрузки на URI, полученный методом

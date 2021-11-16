@@ -10,6 +10,7 @@ using VkNet.Abstractions;
 using VkNet.Enums.Filters;
 using VkNet.Enums.SafetyEnums;
 using VkNet.Exception;
+using VkNet.Infrastructure;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
 using VkNet.Model.RequestParams.Messages;
@@ -190,6 +191,7 @@ namespace VkNet.Categories
 				{
 					{ "user_id", @params.UserId },
 					{ "domain", @params.Domain },
+					{ "title", @params.Title },
 					{ "chat_id", @params.ChatId },
 					{ "user_ids", @params.UserIds },
 					{ "message", @params.Message },
@@ -222,6 +224,7 @@ namespace VkNet.Categories
 					{
 						{ "user_id", @params.UserId },
 						{ "domain", @params.Domain },
+						{ "title", @params.Title },
 						{ "chat_id", @params.ChatId },
 						{ "user_ids", @params.UserIds },
 						{ "message", @params.Message },
@@ -384,25 +387,24 @@ namespace VkNet.Categories
 			return DeleteConversation(userId, peerId, null);
 		}
 
-		/// <inheritdoc />
-		public IDictionary<ulong, bool> Delete(IEnumerable<ulong> messageIds, bool? spam = null, ulong? groupId = null,
+		private IDictionary<ulong, bool> Delete(IEnumerable<ulong> messageIds, IEnumerable<ulong> conversationMessageIds = null, ulong? peerId = null, bool? spam = null, ulong? groupId = null,
 												bool? deleteForAll = null)
 		{
-			if (messageIds == null)
-			{
-				throw new ArgumentNullException(nameof(messageIds), "Parameter messageIds can not be null.");
-			}
-
-			var ids = messageIds.ToList();
+			if (messageIds == null&&conversationMessageIds==null)
+				throw new ArgumentNullException(nameof(conversationMessageIds), "Parameter conversationMessageIds or messageIds can not be null.");
+			List<ulong> ids = messageIds!=null? messageIds.ToList():conversationMessageIds.ToList();
 
 			if (ids.Count == 0)
 			{
-				throw new ArgumentException("Parameter messageIds has no elements.", nameof(messageIds));
+				throw new ArgumentException("Parameter Ids has no elements.", nameof(messageIds));
 			}
+
 
 			var parameters = new VkParameters
 			{
-				{ "message_ids", ids },
+				{ "message_ids", messageIds?.ToList() },
+				{ "conversation_message_ids", conversationMessageIds?.ToList() },
+				{ "peer_id", peerId },
 				{ "spam", spam },
 				{ "group_id", groupId },
 				{ "delete_for_all", deleteForAll }
@@ -418,7 +420,22 @@ namespace VkNet.Categories
 				result.Add(id, isDeleted);
 			}
 
-			return result;
+			return result;}
+
+		/// <inheritdoc />
+		public IDictionary<ulong, bool> Delete(IEnumerable<ulong> messageIds, bool? spam = null, ulong? groupId = null,
+												bool? deleteForAll = null)
+		{
+			return Delete(messageIds, null, null, spam, groupId, deleteForAll);
+		}
+
+		/// <inheritdoc />
+		public IDictionary<ulong, bool> Delete(IEnumerable<ulong> conversationMessageIds, ulong peerId,
+												bool? spam = null, ulong? groupId = null,
+												bool? deleteForAll = null)
+		{
+
+			return Delete(null, conversationMessageIds, peerId, spam, groupId);
 		}
 
 		/// <inheritdoc />
@@ -450,6 +467,16 @@ namespace VkNet.Categories
 		/// <inheritdoc />
 		public bool SetActivity(string userId, MessageActivityType type, long? peerId = null, ulong? groupId = null)
 		{
+			if (peerId is null && groupId is null)
+			{
+				throw new VkApiException("Either one of the parameters 'peerId' and 'groupId' must be specified.");
+			}
+
+			if (peerId is not null && groupId is not null)
+			{
+				throw new VkApiException("This method doesn't accept 'peerId' and 'groupId' being specified simultaneously");
+			}
+
 			var parameters = new VkParameters
 			{
 				{ "used_id", userId },
@@ -678,7 +705,7 @@ namespace VkNet.Categories
 		/// <inheritdoc />
 		public long SetChatPhoto(out long messageId, string file)
 		{
-			var json = JObject.Parse(file);
+			var json = file.ToJObject();
 			var rawResponse = json["response"];
 
 			var parameters = new VkParameters
